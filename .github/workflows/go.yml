@@ -30,6 +30,9 @@ jobs:
       with:
         go-version: ${{ matrix.go_version }}
 
+    - name: Install netcat (for DB wait)
+      run: sudo apt-get update && sudo apt-get install -y netcat
+
     - name: Build DB
       run: docker compose build
 
@@ -38,6 +41,7 @@ jobs:
 
     - name: Wait for DB
       run: |
+        echo "Waiting for PostgreSQL to be ready..."
         for i in {1..10}; do
           if nc -z postgres 5432; then
             echo "DB ready!"
@@ -46,6 +50,7 @@ jobs:
           echo "Waiting for DB..."
           sleep 3
         done
+        echo "Database timeout"
         exit 1
 
     - name: Test
@@ -62,5 +67,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+
     - name: Build
       run: go build -v main.go
