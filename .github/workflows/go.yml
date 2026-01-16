@@ -16,7 +16,7 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     env:
-      HOST: localhost
+      HOST: postgres
       PORT: 5432
       USER: root
       PASSWORD: root
@@ -37,7 +37,16 @@ jobs:
       run: docker compose up -d
 
     - name: Wait for DB
-      run: sleep 10
+      run: |
+        for i in {1..10}; do
+          if nc -z postgres 5432; then
+            echo "DB ready!"
+            exit 0
+          fi
+          echo "Waiting for DB..."
+          sleep 3
+        done
+        exit 1
 
     - name: Test
       run: go test -v ./...
