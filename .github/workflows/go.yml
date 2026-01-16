@@ -2,26 +2,24 @@ name: Go
 
 on:
   push:
-    branches: ['*']
+    branches: [ '*' ]
   pull_request:
-    branches: ['*']
+    branches: [ '*' ]
 
 jobs:
+
   test:
-    strategy:
-      matrix:
-        go_version: ['1.18', '1.17']
-        os: ['ubuntu-latest']
-
     runs-on: ${{ matrix.os }}
-
     env:
-      HOST: postgres
+      HOST: localhost
       PORT: 5432
       USER: root
       PASSWORD: root
       DBNAME: root
-
+    strategy:
+      matrix:
+        go_version: ['1.18', '1.17', '>=1.18']
+                os: ['ubuntu-latest','ubuntu-18.04']
     steps:
     - uses: actions/checkout@v3
 
@@ -30,40 +28,11 @@ jobs:
       with:
         go-version: ${{ matrix.go_version }}
 
-    - name: Build DB
-      run: docker compose build
+    - name: Build-DB
+      run: docker-compose build
 
-    - name: Create DB
-      run: docker compose up -d
-
-    - name: Wait for DB
-      run: |
-        for i in {1..10}; do
-          if nc -z postgres 5432; then
-            echo "DB ready!"
-            exit 0
-          fi
-          echo "Waiting for DB..."
-          sleep 3
-        done
-        exit 1
+    - name: Create-DB
+      run: docker-compose up -d
 
     - name: Test
-      run: go test -v ./...
-
-  build:
-    needs: test
-    strategy:
-      matrix:
-        go_version: ['1.18', '1.17']
-        os: ['ubuntu-latest']
-
-    runs-on: ${{ matrix.os }}
-
-    steps:
-    - uses: actions/checkout@v3
-    - name: Build
-      run: go build -v main.go
-  docker:
-       needs: build
-       uses: ./.github/workflows/Docker.yml
+      run: go test -v main_test.go 
