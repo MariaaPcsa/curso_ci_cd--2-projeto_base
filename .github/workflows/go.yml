@@ -10,16 +10,18 @@ jobs:
 
   test:
     runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        go_version: ['1.18', '1.17', '>=1.18']
+        os: ['ubuntu-latest', 'ubuntu-18.04']
+
     env:
       HOST: localhost
       PORT: 5432
       USER: root
       PASSWORD: root
       DBNAME: root
-    strategy:
-      matrix:
-        go_version: ['1.18', '1.17', '>=1.18']
-        os: ['ubuntu-latest', 'ubuntu-18.04']
+
     steps:
     - uses: actions/checkout@v3
 
@@ -29,10 +31,10 @@ jobs:
         go-version: ${{ matrix.go_version }}
       
     - name: Build-DB
-      run: docker-compose build
+      run: docker compose build
       
     - name: Create-DB
-      run: docker-compose up -d
+      run: docker compose up -d
 
     - name: Test
       run: go test -v main_test.go 
@@ -44,10 +46,12 @@ jobs:
     strategy:
       matrix:
         os: ['ubuntu-latest', 'ubuntu-18.04']
+
     steps:
     - uses: actions/checkout@v3
     - name: Build
       run: go build -v main.go
+
 
   docker:
     needs: build
