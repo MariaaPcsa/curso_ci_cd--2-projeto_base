@@ -13,7 +13,7 @@ jobs:
     strategy:
       matrix:
         go_version: ['1.18', '1.20']
-        os: ['ubuntu-latest', 'ubuntu-18.04']
+        os: ['ubuntu-latest', 'ubuntu-22.04']
 
     services:
       postgres:
@@ -42,7 +42,7 @@ jobs:
 
       - name: Wait for Postgres
         run: |
-          for i in {1..15}; do
+          for i in {1..20}; do
             nc -z localhost 5432 && break
             echo "Aguardando Postgres subir..."
             sleep 1
@@ -56,7 +56,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: ['ubuntu-latest', 'ubuntu-18.04']
+        os: ['ubuntu-latest', 'ubuntu-22.04']
 
     steps:
       - uses: actions/checkout@v3
