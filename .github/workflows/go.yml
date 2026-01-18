@@ -63,6 +63,11 @@ jobs:
 
       - name: Build
         run: go build -v main.go
+      - name: Upload main compilado
+        uses: actions/upload-artifact@v3
+        with:
+          name: programa
+          path: main
 
   docker:
     needs: build
