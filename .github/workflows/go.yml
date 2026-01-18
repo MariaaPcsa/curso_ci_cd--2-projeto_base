@@ -33,10 +33,10 @@ jobs:
       DBNAME: root
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go_version }}
 
@@ -44,32 +44,27 @@ jobs:
         run: |
           for i in {1..20}; do
             nc -z localhost 5432 && break
-            echo "Aguardando Postgres subir..."
+            echo "Waiting for Postgres..."
             sleep 1
           done
 
-      - name: Test
+      - name: Run tests
         run: go test -v
 
   build:
     needs: test
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: ['ubuntu-latest', 'ubuntu-22.04']
+    runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: Build
-        run: go build -v main.go
-      - name: Upload main compilado
-        uses: actions/upload-artifact@v3
+      - name: Build binary
+        run: go build -o main main.go
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
         with:
-          name: programa
-          path: main
-
-  docker:
-    needs: build
-    uses: ./.github/workflows/Docker.yml
-    secrets: inherit
+          name: build-artifact
+          path: ./main
+          if-no-files-found: error
+          retention-days: 30
