@@ -12,8 +12,18 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        go_version: ['1.18', '1.17', '>=1.18']
+        go_version: ['1.18', '1.17']
         os: ['ubuntu-latest', 'ubuntu-18.04']
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: root
+          POSTGRES_PASSWORD: root
+          POSTGRES_DB: root
+        ports:
+          - 5432:5432
 
     env:
       HOST: localhost
@@ -23,23 +33,24 @@ jobs:
       DBNAME: root
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: Set up Go
-      uses: actions/setup-go@v3
-      with:
-        go-version: ${{ matrix.go_version }}
-      
-    - name: Build-DB
-      run: docker compose build
-      
-    - name: Create-DB
-      run: docker compose up -d
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: ${{ matrix.go_version }}
 
-    - name: Test
-      run: go test -v main_test.go 
-      
-  
+      - name: Wait for Postgres
+        run: |
+          for i in {1..15}; do
+            nc -z localhost 5432 && break
+            echo "Aguardando Postgres subir..."
+            sleep 1
+          done
+
+      - name: Test
+        run: go test -v
+
   build:
     needs: test
     runs-on: ${{ matrix.os }}
@@ -48,10 +59,10 @@ jobs:
         os: ['ubuntu-latest', 'ubuntu-18.04']
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Build
-      run: go build -v main.go
+      - uses: actions/checkout@v3
 
+      - name: Build
+        run: go build -v main.go
 
   docker:
     needs: build
