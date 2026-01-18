@@ -31,4 +31,6 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: marialuj/go_ci:latest
+          tags: |
+            marialuj/go_ci:latest
+            marialuj/go_ci:${{ github.sha }}
