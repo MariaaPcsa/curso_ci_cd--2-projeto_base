@@ -1,31 +1,32 @@
-name: Go
+name: Go  # Nome do workflow no GitHub Actions
 
 on:
   push:
-    branches: [ '*' ]
+    branches: [ '*' ]  # Executa o workflow em qualquer branch quando ocorrer push
   pull_request:
-    branches: [ '*' ]
+    branches: [ '*' ]  # Executa também em PRs para qualquer branch
 
 jobs:
 
-  test:
-    runs-on: ${{ matrix.os }}
+  test:  # Primeiro job: roda testes unitários
+    runs-on: ${{ matrix.os }}  # Define o SO dinamicamente baseado no matrix
+
     strategy:
       matrix:
-        go_version: ['1.18', '1.20']
-        os: ['ubuntu-latest', 'ubuntu-22.04']
+        go_version: ['1.18', '1.20']  # Testa em duas versões do Go ao mesmo tempo
+        os: ['ubuntu-latest', 'ubuntu-22.04']  # Testa em dois ambientes Linux diferentes
 
-    services:
-      postgres:
-        image: postgres:15
+    services:  # Define serviços auxiliares (containers)
+      postgres:  # Container do Postgres para os testes
+        image: postgres:15  # Imagem utilizada
         env:
-          POSTGRES_USER: root
-          POSTGRES_PASSWORD: root
-          POSTGRES_DB: root
+          POSTGRES_USER: root  # Usuário do banco
+          POSTGRES_PASSWORD: root  # Senha
+          POSTGRES_DB: root  # Nome do banco
         ports:
-          - 5432:5432
+          - 5432:5432  # Exporta porta para o runner
 
-    env:
+    env:  # Variáveis de ambiente para os testes
       HOST: localhost
       PORT: 5432
       USER: root
@@ -33,38 +34,38 @@ jobs:
       DBNAME: root
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4  # Baixa o código do repositório dentro do runner
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v5  # Instala o Go na versão do matrix
         with:
           go-version: ${{ matrix.go_version }}
 
-      - name: Wait for Postgres
+      - name: Wait for Postgres  # Aguarda o banco subir antes dos testes
         run: |
           for i in {1..20}; do
-            nc -z localhost 5432 && break
+            nc -z localhost 5432 && break  # Testa conexão na porta 5432
             echo "Waiting for Postgres..."
             sleep 1
           done
 
       - name: Run tests
-        run: go test -v
+        run: go test -v  # Executa testes em modo verboso
 
-  build:
-    needs: test
-    runs-on: ubuntu-latest
+  build:  # Segundo job: compila binário
+    needs: test  # Só executa se o job 'test' passar com sucesso
+    runs-on: ubuntu-latest  # Ambiente padrão
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4  # Checkout do repositório
 
       - name: Build binary
-        run: go build -o main main.go
+        run: go build -o main main.go  # Compila binário da aplicação
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4  # Salva o binário como artefato
         with:
-          name: build-artifact
-          path: ./main
-          if-no-files-found: error
-          retention-days: 30
+          name: build-artifact  # Nome exibido no Actions
+          path: ./main  # Caminho do binário
+          if-no-files-found: error  # Erro caso o binário não exista
+          retention-days: 30  # Artefato fica salvo por 30 dias

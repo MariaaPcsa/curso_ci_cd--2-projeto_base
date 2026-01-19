@@ -1,30 +1,65 @@
+# Nome do workflow — apenas organizacional
 name: Docker
 
+# Evento que dispara este workflow quando chamado por outro workflow
 on:
   workflow_call:
 
 jobs:
   docker:
+    # Runner que executará o pipeline (Ubuntu com Docker instalado)
     runs-on: ubuntu-latest
 
     steps:
+      # ---------------------------------------------------------
+      # 1. Baixar o código do repositório
+      # Necessário para permitir o build da imagem Docker
+      # Dependência: actions/checkout@v4
+      # ---------------------------------------------------------
       - uses: actions/checkout@v4
 
+      # ---------------------------------------------------------
+      # 2. Configurar o Docker Buildx
+      # Buildx é necessário para fazer builds modernos (multi-plataforma)
+      # Dependência: docker/setup-buildx-action@v3
+      # ---------------------------------------------------------
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      # ---------------------------------------------------------
+      # 3. Baixar o artefato de build
+      # Normalmente gerado por outro job (ex: Go build)
+      # Dependência: actions/download-artifact@v7
+      # ---------------------------------------------------------
       - name: Download build artifact
         uses: actions/download-artifact@v7
         with:
-          name: build-artifact
-          path: .
+          name: build-artifact   # Nome definido no upload-artifact
+          path: .                # Salvar na raiz
 
+      # ---------------------------------------------------------
+      # 4. Autenticar no Docker Hub
+      # Necessário para push das imagens
+      # Dependência: docker/login-action@v3
+      # IMPORTANTE: precisa de secrets DOCKER_USERNAME e DOCKER_PASSWORD
+      # ---------------------------------------------------------
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      # ---------------------------------------------------------
+      # 5. Build + Push da Imagem Docker
+      # Dependência: docker/build-push-action@v6
+      # Flags:
+      # - context: diretório onde está o Dockerfile
+      # - file: caminho do Dockerfile
+      # - push: envia para o Docker Hub
+      # - tags: versões da imagem
+      #   latest → sempre atualizado
+      #   SHA   → imutável (bom pra CI/CD)
+      # ---------------------------------------------------------
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v6
         with:
